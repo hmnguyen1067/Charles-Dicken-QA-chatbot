@@ -1,0 +1,7 @@
+fastembed
+gutenbergpy
+llama-index
+llama-index-readers-wikipedia
+llama-index-embeddings-fastembed
+llama-index-vector-stores-qdrant
+llama-index-storage-docstore-redis
