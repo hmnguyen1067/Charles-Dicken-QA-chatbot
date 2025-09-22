@@ -1,6 +1,7 @@
 include:
   - path: prefect.yaml
   - path: redis.yaml
+  - path: mlflow.yaml
 
 services:
   qdrant:
