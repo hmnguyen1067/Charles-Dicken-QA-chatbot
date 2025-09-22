@@ -1,6 +1,7 @@
 fastembed
 gutenbergpy
 llama-index
+llama-index-storage-docstore-redis
 llama-index-readers-wikipedia
 llama-index-embeddings-fastembed
 llama-index-vector-stores-qdrant
