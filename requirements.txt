@@ -1,3 +1,4 @@
+spacy
 fastembed
 gutenbergpy
 llama-index
@@ -6,3 +7,8 @@ llama-index-readers-wikipedia
 llama-index-embeddings-fastembed
 llama-index-vector-stores-qdrant
 llama-index-storage-docstore-redis
+arize-phoenix-otel
+arize-phoenix
+arize-phoenix-evals
+openinference-instrumentation-llama_index
+openinference-instrumentation-openai
