@@ -1,0 +1,24 @@
+services:
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    depends_on:
+      - phoenix_db
+    ports:
+      - 6006:6006
+      - 4317:4317
+      - 9090:9090
+    environment:
+      - PHOENIX_SQL_DATABASE_URL=postgresql://phoenix:phoenix@phoenix_db:5432/phoenix
+  phoenix_db:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=phoenix
+      - POSTGRES_PASSWORD=phoenix
+      - POSTGRES_DB=phoenix
+    ports:
+      - 5433:5432
+    volumes:
+      - phoenix_data:/var/lib/postgresql/data
+volumes:
+  phoenix_data:
