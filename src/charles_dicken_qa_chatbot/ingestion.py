@@ -1,14 +1,18 @@
 import gutenbergpy.textget
 import pandas as pd
 from llama_index.core import Document
-from llama_index.core.extractors import KeywordExtractor, SummaryExtractor
+from llama_index.core.extractors import KeywordExtractor
 from llama_index.core.ingestion import DocstoreStrategy, IngestionPipeline
 from llama_index.core.llama_dataset.generator import RagDatasetGenerator
-from llama_index.core.node_parser import TokenTextSplitter
+from llama_index.core.node_parser import SemanticSplitterNodeParser
 from llama_index.readers.wikipedia import WikipediaReader
 
-from .config import (get_fastembed_model, get_openai_model,
-                     get_redis_cache_storage, get_vector_store)
+from .config import (
+    get_openai_embed_model,
+    get_openai_model,
+    get_redis_cache_storage,
+    get_vector_store,
+)
 
 
 def get_books_from_path(source_path: str):
@@ -33,11 +37,20 @@ def extract_doc_from_gutenberg_wikipedia(df: pd.DataFrame):
         docs.extend(
             [
                 Document(
-                    text=book_text, metadata={"title": book_title, "source": "book"}
+                    text=book_text,
+                    metadata={
+                        "title": book_title,
+                        "gutenberg_id": book_id,
+                        "source": "book",
+                    },
                 ),
                 Document(
                     text=wiki_doc[0].text,
-                    metadata={"title": book_title, "source": "wikipedia"},
+                    metadata={
+                        "title": book_title,
+                        "gutenberg_id": book_id,
+                        "source": "wikipedia",
+                    },
                 ),
             ]
         )
@@ -56,27 +69,34 @@ def create_ingestion_pipeline(
         qdrant_host=qdrant_host,
         qdrant_port=qdrant_port,
     )
-    redis_docstore, redis_cache = get_redis_cache_storage(
+    redis_docstore, redis_indexstore, redis_cache = get_redis_cache_storage(
         collection_name=collection_name,
         redis_host=redis_host,
         redis_port=redis_port,
     )
 
-    text_splitter = TokenTextSplitter(
-        chunk_size=512,
-        chunk_overlap=128,
-        separator=" ",
+    embed_model = get_openai_embed_model()
+
+    # splitter = TokenTextSplitter(
+    #     chunk_size=512,
+    #     chunk_overlap=128,
+    #     separator=" ",
+    # )
+
+    splitter = SemanticSplitterNodeParser(
+        buffer_size=2,
+        breakpoint_percentile_threshold=75,
+        embed_model=embed_model,
     )
 
-    summary_extractor = SummaryExtractor(summaries=["prev", "self"])
+    # summary_extractor = SummaryExtractor(summaries=["prev", "self"])
     keyword_extractor = KeywordExtractor(keywords=10)
-    embed_model = get_fastembed_model("BAAI/bge-base-en-v1.5")
 
     pipeline = IngestionPipeline(
         transformations=[
-            text_splitter,
+            splitter,
             keyword_extractor,
-            summary_extractor,
+            # summary_extractor,
             embed_model,
         ],
         vector_store=vector_store,
@@ -87,9 +107,10 @@ def create_ingestion_pipeline(
     return pipeline
 
 
-def generate_synthetic_eval_dataset(
+async def generate_synthetic_eval_dataset(
     nodes,
-    llm_model: str = "gpt-4.1-mini",
+    opik_client,
+    llm_model: str = "gpt-5-mini",
     num_questions_per_chunk: int = 1,
     show_progress=True,
 ):
@@ -102,8 +123,5 @@ def generate_synthetic_eval_dataset(
         num_questions_per_chunk=num_questions_per_chunk,
     )
 
-    rag_dataset = dataset_generator.generate_dataset_from_nodes()
-    rag_df = rag_dataset.to_pandas().drop(["reference_answer_by", "query_by"], axis=1)
-    rag_df.columns = ["question", "context", "answer"]
-
-    return rag_df
+    rag_dataset = await dataset_generator.agenerate_dataset_from_nodes()
+    return rag_dataset
