@@ -13,6 +13,8 @@ repos:
     -   id: ruff-check
         types_or: [ python, pyi ]
         args: [ --fix ]
+    -   id: ruff-format
+        types_or: [ python, pyi ]
 -   repo: https://github.com/pycqa/isort
     rev: 6.0.1
     hooks:
