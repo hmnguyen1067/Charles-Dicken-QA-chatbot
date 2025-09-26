@@ -1,7 +1,5 @@
 include:
-  - path: prefect.yaml
   - path: redis.yaml
-  - path: phoenix.yaml
 
 services:
   qdrant:
