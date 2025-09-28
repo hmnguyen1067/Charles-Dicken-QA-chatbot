@@ -1,5 +1,8 @@
 include:
   - path: redis.yaml
+  - path:
+      - ../opik/deployment/docker-compose/docker-compose.yaml
+      - ../opik/deployment/docker-compose/docker-compose.override.yaml
 
 services:
   qdrant:
