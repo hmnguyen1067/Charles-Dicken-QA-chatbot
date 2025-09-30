@@ -35,13 +35,11 @@ def make_task(query_engine):
 
 @opik.track
 def run_evaluation(
-    opik_client,
+    dataset: opik.Dataset,
     query_engine,
-    eval_dataset_name: str,
-    llm_model: str = "gpt-5-mini",
+    llm_model: str,
     metrics: list = [],
 ):
-    dataset = opik_client.get_or_create_dataset(name=eval_dataset_name)
     task = make_task(query_engine)
 
     if len(metrics) == 0:
@@ -70,8 +68,10 @@ def run_evaluation(
     scores = evaluation.aggregate_evaluation_scores()
     for metric_name, statistics in scores.aggregated_scores.items():
         print(f"{metric_name}: {statistics}")
+    return scores
 
 
+@opik.track
 async def retrieval_results(retriever, eval_dataset):
     """Function to get retrieval results for a retriever and evaluation dataset"""
 
