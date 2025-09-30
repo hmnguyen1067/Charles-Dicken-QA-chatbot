@@ -1,9 +1,13 @@
-HELL = /bin/bash
+SHELL = /bin/bash
 
-env-setup:
+.PHONY: get-opik
+
+pull-opik:
+	bash scripts/pull_opik.sh
+
+env-setup: get-opik
 	pixi install
 	pixi run pip install --upgrade -r requirements.txt
-	git clone https://github.com/comet-ml/opik.git
 
 docker-up:
 	docker compose -f infra/docker-compose.yaml --profile opik up -d --build
