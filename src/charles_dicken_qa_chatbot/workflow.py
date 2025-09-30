@@ -2,10 +2,11 @@
 from datetime import datetime
 
 import os
+import random
+from dotenv import load_dotenv
+
 import pandas as pd
 import opik
-
-from dotenv import load_dotenv
 
 from llama_index.core import (
     Settings,
@@ -44,6 +45,16 @@ from .utils import (
 )
 
 from .evaluation import run_evaluation
+
+
+def sample_nodes_by_percentage(nodes, percentage):
+    if not (0 <= percentage <= 1):
+        raise ValueError("Percentage must be between 0 and 1 (inclusive).")
+
+    num_elements_to_sample = int(len(nodes) * percentage)
+    sampled_nodes = random.sample(nodes, num_elements_to_sample)
+
+    return sampled_nodes
 
 
 class RAGFlow(Workflow):
@@ -147,9 +158,14 @@ class RAGFlow(Workflow):
 
         num_questions_per_chunk = ev.get("num_questions_per_chunk", 1)
 
+        sample_percentage = ev.get("sample_percentage", 0.15)
+        sampled_nodes = sample_nodes_by_percentage(
+            nodes=qa_nodes, percentage=sample_percentage
+        )
+
         # Use default llm
         qa_dataset = create_eval_dataset(
-            qa_nodes[:5], llm=self.llm, num_questions_per_chunk=num_questions_per_chunk
+            sampled_nodes, llm=self.llm, num_questions_per_chunk=num_questions_per_chunk
         )
 
         if save_path := ev.get("save_path", "qa_dataset.json"):
@@ -355,8 +371,13 @@ class RAGFlow(Workflow):
             return OpikDatasetEvent(done=True)
         else:
             # Insert items into dataset
+            sample_percentage = ev.get("sample_percentage", 0.15)
+            sampled_nodes = sample_nodes_by_percentage(
+                nodes=opik_nodes, percentage=sample_percentage
+            )
+
             rag_dataset = await generate_synthetic_eval_dataset(
-                nodes=opik_nodes[:5], num_questions_per_chunk=num_questions_per_chunk
+                nodes=sampled_nodes, num_questions_per_chunk=num_questions_per_chunk
             )
             self.opik_dataset.insert_from_pandas(rag_dataset.to_pandas())
 
