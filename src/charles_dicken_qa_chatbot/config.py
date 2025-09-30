@@ -1,6 +1,7 @@
 import qdrant_client
 from llama_index.core.ingestion import IngestionCache
-from llama_index.embeddings.fastembed import FastEmbedEmbedding
+
+# from llama_index.embeddings.fastembed import FastEmbedEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
 from llama_index.storage.docstore.redis import RedisDocumentStore
@@ -9,8 +10,8 @@ from llama_index.storage.kvstore.redis import RedisKVStore as RedisCache
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 
 
-def get_fastembed_model(model_name: str):
-    return FastEmbedEmbedding(model_name=model_name)
+# def get_fastembed_model(model_name: str):
+#     return FastEmbedEmbedding(model_name=model_name)
 
 
 def get_openai_embed_model():
@@ -36,6 +37,7 @@ def get_vector_store(
         enable_hybrid=True,
         fastembed_sparse_model=fastembed_sparse_model,
         collection_name=collection_name,
+        timeout=120,
     )
     return vector_store
 
