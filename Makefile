@@ -14,3 +14,9 @@ docker-up:
 
 docker-down:
 	docker compose -f infra/docker-compose.yaml --profile opik down
+
+fastapi-app:
+	uvicorn api:app --reload --port 8001
+
+streamlit-app:
+	streamlit run app.py --server.port 8501
