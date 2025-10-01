@@ -1,3 +1,6 @@
+# Cache from dependencies
+notebooks/text/
+
 # Infra repo pull
 opik/
 
