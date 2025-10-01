@@ -51,6 +51,7 @@ async def lifespan(app: FastAPI):
             qdrant_port=QDRANT_PORT,
             redis_host=REDIS_HOST,
             redis_port=REDIS_PORT,
+            timeout=300,
         )
 
         # Load context from Redis
@@ -61,11 +62,18 @@ async def lifespan(app: FastAPI):
         ctx_data = redis_client.get("ctx")
         if not ctx_data:
             print(
-                "Warning: No context found in Redis. System will need initialization."
+                "Warning: No context found in Redis. System will use default initialization."
             )
+            ctx = Context(workflow)
+            _ = await workflow.run(from_default=True, ctx=ctx)
+            await workflow.run(initialize_ctx=True, ctx=ctx)
+
             app_state["workflow"] = workflow
-            app_state["ctx"] = None
-            app_state["initialized"] = False
+            app_state["ctx"] = ctx
+            app_state["initialized"] = True
+            print(
+                "✅ RAG System initialized from default snapshot successfully on startup"
+            )
         else:
             loaded_ctx_dict = json.loads(ctx_data)
             ctx = Context.from_dict(
@@ -78,7 +86,7 @@ async def lifespan(app: FastAPI):
             app_state["workflow"] = workflow
             app_state["ctx"] = ctx
             app_state["initialized"] = True
-            print("✅ RAG System initialized successfully on startup")
+            print("✅ RAG System initialized from Context successfully on startup")
 
     except Exception as e:
         print(f"⚠️  Failed to initialize on startup: {e}")

@@ -1,7 +1,7 @@
 import gutenbergpy.textget
 import pandas as pd
 from llama_index.core import Document, StorageContext
-from llama_index.core.extractors import KeywordExtractor
+from llama_index.core.extractors import TitleExtractor
 from llama_index.core.ingestion import DocstoreStrategy, IngestionPipeline
 from llama_index.core.llama_dataset.generator import RagDatasetGenerator
 from llama_index.core.node_parser import SentenceSplitter
@@ -19,6 +19,27 @@ def get_books_from_path(source_path: str):
     return df
 
 
+def gutenberg_text_by_id(gutenberg_id: int):
+    return (
+        gutenbergpy.textget.strip_headers(
+            gutenbergpy.textget.get_text_by_id(gutenberg_id)
+        )
+        .decode("utf-8")
+        .replace("\r\n", "\n")
+    )
+
+
+def extract_doc_from_gutenberg_only(gutenberg_id: int):
+    book_text = gutenberg_text_by_id(gutenberg_id=gutenberg_id)
+    return Document(
+        text=book_text,
+        metadata={
+            "gutenberg_id": gutenberg_id,
+            "source": "book",
+        },
+    )
+
+
 def extract_doc_from_gutenberg_wikipedia(df: pd.DataFrame):
     reader = WikipediaReader()
 
@@ -27,18 +48,13 @@ def extract_doc_from_gutenberg_wikipedia(df: pd.DataFrame):
     for _, row in df.iterrows():
         book_id = row["Gutenberg ID"]
         book_title = row["Title"]
-        book_text = (
-            gutenbergpy.textget.get_text_by_id(book_id)
-            .decode("utf-8")
-            .replace("\r\n", "\n")
-        )
+        book_text = gutenberg_text_by_id(gutenberg_id=book_id)
         wiki_doc = reader.load_data(pages=[book_title])
         docs.extend(
             [
                 Document(
                     text=book_text,
                     metadata={
-                        "title": book_title,
                         "gutenberg_id": book_id,
                         "source": "book",
                     },
@@ -46,7 +62,6 @@ def extract_doc_from_gutenberg_wikipedia(df: pd.DataFrame):
                 Document(
                     text=wiki_doc[0].text,
                     metadata={
-                        "title": book_title,
                         "gutenberg_id": book_id,
                         "source": "wikipedia",
                     },
@@ -90,12 +105,15 @@ def create_ingestion_pipeline(storage_context, cache):
     )
 
     # summary_extractor = SummaryExtractor(summaries=["prev", "self"])
-    keyword_extractor = KeywordExtractor(keywords=10)
+    # keyword_extractor = KeywordExtractor(keywords=5)
+    title_extractor = TitleExtractor(nodes=5)
 
     pipeline = IngestionPipeline(
         transformations=[
             splitter,
-            keyword_extractor,
+            title_extractor,
+            # keyword_extractor,
+            # summary_extractor,
             embed_model,
         ],
         vector_store=storage_context.vector_store,

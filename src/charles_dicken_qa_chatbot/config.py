@@ -37,7 +37,7 @@ def get_vector_store(
         enable_hybrid=True,
         fastembed_sparse_model=fastembed_sparse_model,
         collection_name=collection_name,
-        timeout=120,
+        timeout=300,
     )
     return vector_store
 

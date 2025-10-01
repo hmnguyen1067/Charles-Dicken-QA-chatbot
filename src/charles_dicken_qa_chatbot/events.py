@@ -9,6 +9,12 @@ class SourceExtractionEvent(Event):
     docs: list[Document]
 
 
+class GutenbergIDExtractionEvent(Event):
+    """Result of running extraction from default on startup"""
+
+    docs: list[Document]
+
+
 class RetrievalDatasetEvent(Event):
     """Result of creating synthetic QnA dataset from nodes"""
 

@@ -25,6 +25,7 @@ from .ingestion import (
     create_cache_context_storage,
     create_ingestion_pipeline,
     extract_doc_from_gutenberg_wikipedia,
+    extract_doc_from_gutenberg_only,
     generate_synthetic_eval_dataset,
     get_books_from_path,
 )
@@ -34,6 +35,7 @@ from .events import (
     OpikDatasetEvent,
     RetrivalEvalEvent,
     ContextInitializationEvent,
+    GutenbergIDExtractionEvent,
 )
 from .utils import (
     create_eval_dataset,
@@ -125,14 +127,27 @@ class RAGFlow(Workflow):
         docs = extract_doc_from_gutenberg_wikipedia(df)
 
         await ctx.store.set("docs", docs)
-        print(f"Number of documents extracted: {len(docs)}")
 
         return SourceExtractionEvent(docs=docs)
 
     @opik.track
     @step
-    async def ingest_from_source(
-        self, ctx: Context, ev: SourceExtractionEvent
+    async def gutenbergid_extraction(
+        self, ctx: Context, ev: StartEvent
+    ) -> GutenbergIDExtractionEvent:
+        """Entry point to ingest a document, triggered by a StartEvent with `source_path`."""
+        gutenberg_id = ev.get("gutenberg_id")
+        if not gutenberg_id:
+            return None
+
+        docs = [extract_doc_from_gutenberg_only(gutenberg_id)]
+
+        return GutenbergIDExtractionEvent(docs=docs)
+
+    @opik.track
+    @step
+    async def ingestion(
+        self, ctx: Context, ev: SourceExtractionEvent | GutenbergIDExtractionEvent
     ) -> StopEvent:
         nodes = await self.ingestion_pipeline.arun(
             documents=ev.docs,
@@ -140,9 +155,26 @@ class RAGFlow(Workflow):
             show_progress=True,
         )
 
-        print(f"Number of chunks is: {len(nodes)}")
+        print(f"Number of chunks ingested is: {len(nodes)}")
 
+        nodes = self.storage_context.vector_store.get_nodes()
         await ctx.store.set("nodes", nodes)
+
+        return StopEvent(result=nodes)
+
+    # Default startup
+    @opik.track
+    @step
+    async def default_snapshots(self, ctx: Context, ev: StartEvent) -> StopEvent:
+        from_default = ev.get("from_default")
+        if not from_default:
+            return None
+
+        nodes = self.storage_context.vector_store.get_nodes()
+
+        similarity_top_k = ev.get("similarity_top_k", 3)
+        await ctx.store.set("nodes", nodes)
+        await ctx.store.set("similarity_top_k", similarity_top_k)
 
         return StopEvent(result=nodes)
 
