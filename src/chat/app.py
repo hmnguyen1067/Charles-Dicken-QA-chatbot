@@ -9,7 +9,7 @@ import opik
 from opik import opik_context
 from dotenv import load_dotenv
 
-from charles_dicken_qa_chatbot.constants import (
+from .constants import (
     STREAMLIT_CSS,
     STREAMLIT_INSTRUCTIONS_EXAMPLES,
     STREAMLIT_BACKEND_INSTRUCTIONS,
