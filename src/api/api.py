@@ -5,8 +5,6 @@ import json
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional
 
 from llama_index.core.workflow import Context, JsonSerializer
 
@@ -21,39 +19,14 @@ from charles_dicken_qa_chatbot.constants import (
     REDIS_HOST,
     REDIS_PORT,
 )
-
-
-# Request/Response Models
-class QueryRequest(BaseModel):
-    question: str
-
-
-class SourceDocument(BaseModel):
-    text: str
-    score: Optional[float]
-    metadata: dict
-
-
-class QueryResponse(BaseModel):
-    answer: str
-    sources: list[SourceDocument]
-
-
-class ConfigResponse(BaseModel):
-    llm_model: str
-    collection_name: str
-    opik_project: str
-    initialized: bool
-
-
-class HealthResponse(BaseModel):
-    status: str
-    initialized: bool
-
-
-class InitializeResponse(BaseModel):
-    success: bool
-    message: str
+from .schemas import (
+    QueryRequest,
+    SourceDocument,
+    QueryResponse,
+    ConfigResponse,
+    HealthResponse,
+    InitializeResponse,
+)
 
 
 # Global state
