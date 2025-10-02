@@ -2,6 +2,7 @@
 
 import redis
 import json
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,16 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from llama_index.core.workflow import Context, JsonSerializer
 
 from charles_dicken_qa_chatbot.workflow import RAGFlow
-from charles_dicken_qa_chatbot.constants import (
-    OPIK_BASE_URL,
-    OPIK_PROJ_NAME,
-    LLM_MODEL,
-    COLLECTION_NAME,
-    QDRANT_HOST,
-    QDRANT_PORT,
-    REDIS_HOST,
-    REDIS_PORT,
-)
+
 from .schemas import (
     QueryRequest,
     SourceDocument,
@@ -36,6 +28,15 @@ app_state = {
     "initialized": False,
 }
 
+OPIK_PROJ_NAME = os.getenv("OPIK_PROJ_NAME")
+LLM_MODEL = os.getenv("LLM_MODEL")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME")
+QDRANT_HOST = os.getenv("QDRANT_HOST")
+QDRANT_PORT = os.getenv("QDRANT_PORT")
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = os.getenv("REDIS_PORT")
+OPIK_URL_OVERRIDE = os.getenv("OPIK_URL_OVERRIDE")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -43,7 +44,7 @@ async def lifespan(app: FastAPI):
     try:
         # Initialize workflow
         workflow = RAGFlow(
-            opik_host=OPIK_BASE_URL,
+            opik_host=OPIK_URL_OVERRIDE,
             opik_project_name=OPIK_PROJ_NAME,
             llm_model_name=LLM_MODEL,
             collection_name=COLLECTION_NAME,
@@ -93,6 +94,10 @@ async def lifespan(app: FastAPI):
         print("System will require manual initialization via /initialize endpoint")
 
     yield
+
+    # Shutting down clean up
+    ctx_dict = ctx.to_dict(serializer=JsonSerializer())
+    redis_client.set("ctx", json.dumps(ctx_dict))
 
 
 app = FastAPI(
@@ -146,7 +151,7 @@ async def initialize_system():
         workflow = app_state.get("workflow")
         if not workflow:
             workflow = RAGFlow(
-                opik_host=OPIK_BASE_URL,
+                opik_host=OPIK_URL_OVERRIDE,
                 opik_project_name=OPIK_PROJ_NAME,
                 llm_model_name=LLM_MODEL,
                 collection_name=COLLECTION_NAME,
@@ -154,6 +159,7 @@ async def initialize_system():
                 qdrant_port=QDRANT_PORT,
                 redis_host=REDIS_HOST,
                 redis_port=REDIS_PORT,
+                timeout=300,
             )
             app_state["workflow"] = workflow
 
@@ -206,7 +212,9 @@ async def query_system(request: QueryRequest):
         workflow = app_state["workflow"]
         ctx = app_state["ctx"]
 
-        response = await workflow.run(query=request.question, ctx=ctx)
+        response = await workflow.run(
+            query=request.question, thread_id=request.thread_id, ctx=ctx
+        )
 
         # Extract answer and sources
         answer_text = str(response.response)

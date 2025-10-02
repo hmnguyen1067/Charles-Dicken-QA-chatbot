@@ -5,6 +5,7 @@ from typing import Optional
 # Request/Response Models
 class QueryRequest(BaseModel):
     question: str
+    thread_id: str
 
 
 class SourceDocument(BaseModel):

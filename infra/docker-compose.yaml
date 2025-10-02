@@ -21,6 +21,89 @@ services:
         target: /qdrant/config/production.yaml
     volumes:
       - qdrant_data:/qdrant/storage
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - bash -c ':> /dev/tcp/127.0.0.1/6333' || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  api-prestart-curl:
+    image: curlimages/curl:8.10.1
+    container_name: api-prestart-curl
+    volumes:
+      - ../qdrant_snapshots:/snapshots:ro
+    entrypoint: ["sh", "-lc"]
+    command: >-
+      'echo "Uploading Qdrant snapshot before API start" && \
+       curl -fsS -X POST "http://qdrant:6333/collections/charles_dickens/snapshots/upload?priority=snapshot" \
+         -H "Content-Type: multipart/form-data" \
+         -F snapshot=@"/snapshots/charles_dickens-2025.snapshot" && \
+       echo "Snapshot upload completed"'
+    restart: "no"
+    depends_on:
+      qdrant:
+        condition: service_healthy
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    container_name: api
+    env_file:
+      - ../.env
+    environment:
+      OPIK_PROJ_NAME: charles-dicken-qa
+      LLM_MODEL: gpt-5-nano
+      COLLECTION_NAME: charles_dickens
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+      REDIS_HOST: redis-general
+      REDIS_PORT: 6379
+      OPIK_URL_OVERRIDE: http://frontend:5173/
+      OPIK_TRACE_THREAD_TIMEOUT_TO_MARK_AS_INACTIVE: 300
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      redis-general:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+      api-prestart-curl:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  streamlit:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.streamlit
+    container_name: streamlit
+    profiles: ["app"]
+    env_file:
+      - ../.env
+    environment:
+      API_BASE_URL: http://api:8001
+    ports:
+      - "8501:8501"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   qdrant_data:

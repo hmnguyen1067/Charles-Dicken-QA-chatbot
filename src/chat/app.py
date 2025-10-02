@@ -5,16 +5,82 @@ import uuid
 import requests
 
 import streamlit as st
-import opik
-from opik import opik_context
 from dotenv import load_dotenv
 
-from .constants import (
-    STREAMLIT_CSS,
-    STREAMLIT_INSTRUCTIONS_EXAMPLES,
-    STREAMLIT_BACKEND_INSTRUCTIONS,
-    STREAMLIT_INITIALIZE_INSTRUCTIONS,
-)
+
+STREAMLIT_CSS = """
+<style>
+    .main-header {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #1f77b4;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    .sub-header {
+        text-align: center;
+        color: #666;
+        margin-bottom: 2rem;
+    }
+    .source-box {
+        background-color: #f0f2f6;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin: 0.5rem 0;
+    }
+    .source-title {
+        font-weight: bold;
+        color: #1f77b4;
+    }
+    .stChatMessage {
+        padding: 1rem;
+    }
+</style>
+"""
+STREAMLIT_INSTRUCTIONS_EXAMPLES = """
+        ### 📝 Instructions
+        1. Ensure Qdrant, Redis, and Opik services are running (`make docker-up`)
+        2. Ensure FastAPI backend is running (`docker ps -a | grep api`)
+        3. Documents are already preloaded,
+        4. Click "Re-initialize System" if not auto-initialized
+        5. Start asking questions!
+
+        ### 💡 Example Questions
+        - What are the main themes in Great Expectations?
+        - Who is Pip in Charles Dickens' novels?
+        - Describe the setting of Oliver Twist
+        - What is the plot of A Tale of Two Cities?
+
+        ### 🔧 Backend URL
+        `{}`
+        """
+STREAMLIT_BACKEND_INSTRUCTIONS = """
+        ### Starting the Backend
+
+        Make sure that backend is live in Docker after startup
+        ```bash
+        make docker-up
+        docker ps -a | grep api
+        ```
+
+        """
+STREAMLIT_INITIALIZE_INSTRUCTIONS = """
+        ### Getting Started
+
+        Before using the chatbot, you need to:
+
+        1. **Start required services:**
+            ```bash
+            make docker-up
+            ```
+
+        2. **Ingest documents** (Optional since Qdrant is preloaded with backup snapshot):
+            - Use the notebook `notebooks/ragflow.ipynb`
+
+        3. **Re-initialize the system** using the sidebar if not properly loaded
+
+        Once initialized, you can start asking questions about Charles Dickens novels!
+        """
 
 
 # Load environment variables
@@ -91,13 +157,14 @@ def initialize_rag_system():
         return False, f"Connection error: {str(e)}"
 
 
-@opik.track
 def query_rag_system(question: str, thread_id: str):
     """Query the RAG system via FastAPI backend."""
-    opik_context.update_current_trace(thread_id=thread_id)
+
     try:
         response = requests.post(
-            f"{API_BASE_URL}/query", json={"question": question}, timeout=60
+            f"{API_BASE_URL}/query",
+            json={"question": question, "thread_id": thread_id},
+            timeout=60,
         )
         if response.status_code == 200:
             return response.json()
@@ -117,8 +184,12 @@ def display_sources(sources):
     st.markdown("### 📖 Source Documents")
 
     for idx, source in enumerate(sources, 1):
-        with st.expander(f"Source {idx}: {source['metadata'].get('title', 'Unknown')}"):
-            st.markdown(f"**Book:** {source['metadata'].get('title', 'Unknown')}")
+        with st.expander(
+            f"Source {idx}: {source['metadata'].get('document_title', 'Unknown')}"
+        ):
+            st.markdown(
+                f"**Gutenberg ID:** {source['metadata'].get('gutenberg_id', 'Unknown')}"
+            )
             st.markdown(f"**Source:** {source['metadata'].get('source', 'Unknown')}")
 
             if source["score"] is not None:
@@ -158,9 +229,6 @@ def main():
             st.success("✅ System Ready")
             if st.session_state.config is None:
                 st.session_state.config = get_backend_config()
-                os.environ["OPIK_PROJECT_NAME"] = st.session_state.config[
-                    "opik_project"
-                ]
 
             if st.session_state.config:
                 st.info(
@@ -178,7 +246,7 @@ def main():
         # Initialize button
         if backend_alive and not backend_initialized:
             if st.button(
-                "🚀 Initialize System", type="primary", use_container_width=True
+                "🚀 Re-initialize System", type="primary", use_container_width=True
             ):
                 with st.spinner("Initializing RAG system..."):
                     success, message = initialize_rag_system()
@@ -260,7 +328,5 @@ if __name__ == "__main__":
             "⚠️ OPENAI_API_KEY not found in environment variables. Please set it in your .env file."
         )
         st.stop()
-
-    os.environ["OPIK_TRACE_THREAD_TIMEOUT_TO_MARK_AS_INACTIVE"] = "300"
 
     main()
