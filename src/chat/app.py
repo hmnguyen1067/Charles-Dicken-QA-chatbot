@@ -223,7 +223,7 @@ def main():
         if not backend_alive:
             st.error("❌ Backend Offline")
             st.warning(
-                "FastAPI backend is not running. Please start it with:\n\n`make fastapi-app` or `uvicorn api:app --reload --port 8001`"
+                "FastAPI backend is not running. Please start it with:\n\n`make docker-up`"
             )
         elif backend_initialized:
             st.success("✅ System Ready")
