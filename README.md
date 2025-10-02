@@ -1,6 +1,6 @@
 # Charles Dickens QA RAG-powered Chat Interface
 
-<iframe width="809" height="460" src="https://www.youtube.com/embed/5b3XEsJqm00" title="Charles Dickens QA RAG Chatbot Streamlit demo" frameborder="0" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="809" height="460" src="https://www.youtube.com/embed/5b3XEsJqm00" title="Charles Dickens QA RAG Chatbot Streamlit demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 
 ## Description
