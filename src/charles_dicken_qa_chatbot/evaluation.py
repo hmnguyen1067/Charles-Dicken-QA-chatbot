@@ -63,6 +63,7 @@ def run_evaluation(
         scoring_metrics=metrics,
         scoring_key_mapping={"input": "query"},
         experiment_config={"rag": "base"},
+        task_threads=2,
     )
 
     scores = evaluation.aggregate_evaluation_scores()

@@ -9,6 +9,5 @@ REDIS_PORT = 6380
 
 SPARSE_EMBEDDING_MODEL = "Qdrant/bm42-all-minilm-l6-v2-attentions"
 
-PREFECT_API_URL = "http://localhost:4200"
 OPIK_BASE_URL = "http://localhost:5173/api"
 OPIK_PROJ_NAME = "charles-dicken-qa"

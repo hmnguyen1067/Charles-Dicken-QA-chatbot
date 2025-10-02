@@ -59,6 +59,14 @@ def sample_nodes_by_percentage(nodes, percentage):
     return sampled_nodes
 
 
+@opik.track
+def track_convo(query: str, text: str, thread_id: str):
+    opik.opik_context.updatemake_current_trace(
+        input={"question": query}, output={"answer": text}, thread_id=thread_id
+    )
+    return text
+
+
 class RAGFlow(Workflow):
     def __init__(
         self,
@@ -437,6 +445,8 @@ class RAGFlow(Workflow):
         if not query:
             return None
 
+        thread_id = ev.get("thread_id")
+
         if not hasattr(self, "query_engine"):
             print(
                 "Query engine is empty, load some documents to Context before querying!"
@@ -445,4 +455,7 @@ class RAGFlow(Workflow):
 
         await ctx.store.set("query", query)
         response = self.query_engine.query(query)
+
+        if thread_id:
+            track_convo(query=query, text=response.response, thread_id=thread_id)
         return StopEvent(result=response)
