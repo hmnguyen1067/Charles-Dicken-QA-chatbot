@@ -1,22 +1,17 @@
 SHELL = /bin/bash
 
-.PHONY: get-opik
-
-pull-opik:
-	bash scripts/pull_opik.sh
-
-env-setup: get-opik
+env-setup-dev:
 	pixi install
 	pixi run pip install --upgrade -r requirements.txt
 
-docker-up:
-	docker compose -f infra/docker-compose.yaml --profile opik up -d --build
+.PHONY: pull-opik
+pull-opik:
+	bash scripts/pull_opik.sh
 
+.PHONY: docker-up
+docker-up: pull-opik
+	docker compose -f infra/docker-compose.yaml --profile opik --profile app up -d --build
+
+.PHONY: docker-down
 docker-down:
-	docker compose -f infra/docker-compose.yaml --profile opik down
-
-fastapi-app:
-	uvicorn api:app --reload --port 8001
-
-streamlit-app:
-	streamlit run app.py --server.port 8501
+	docker compose -f infra/docker-compose.yaml --profile opik --profile app down

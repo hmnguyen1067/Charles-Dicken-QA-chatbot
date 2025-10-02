@@ -1,6 +1,5 @@
-spacy
-fastembed
-gutenbergpy
+pandas
+opik
 llama-index
 llama-index-storage-docstore-redis
 llama-index-readers-wikipedia
@@ -9,6 +8,11 @@ llama-index-storage-docstore-redis
 llama-index-storage-index-store-redis
 llama-index-callbacks-opik
 llama-index-retrievers-bm25
+gutenbergpy
+sentence-transformers
+spacy
+tenacity
+fastembed
 opik
 dataclasses-json
 networkx
@@ -23,4 +27,3 @@ aiosqlite
 sqlalchemy[asyncio]
 pydantic_settings
 rich
-sentence-transformers
