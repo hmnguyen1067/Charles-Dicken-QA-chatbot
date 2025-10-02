@@ -61,7 +61,7 @@ def sample_nodes_by_percentage(nodes, percentage):
 
 @opik.track
 def track_convo(query: str, text: str, thread_id: str):
-    opik.opik_context.updatemake_current_trace(
+    opik.opik_context.update_current_trace(
         input={"question": query}, output={"answer": text}, thread_id=thread_id
     )
     return text
