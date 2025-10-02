@@ -1,7 +1,6 @@
 # Charles Dickens QA RAG-powered Chat Interface
 
-<iframe width="809" height="460" src="https://www.youtube.com/embed/5b3XEsJqm00" title="Charles Dickens QA RAG Chatbot Streamlit demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
+[![Demo video](https://img.youtube.com/vi/5b3XEsJqm00/hqdefault.jpg)](https://www.youtube.com/embed/5b3XEsJqm00)
 
 ## Description
 This project is a Retrieval-Augmented Generation (RAG) chatbot focused on Charles Dickens’ works. It combines LlamaIndex Workflows for orchestration, a FastAPI backend, and a Streamlit frontend. Context and embeddings persist in Qdrant and Redis for fast, repeatable queries. Opik provides evaluation and monitoring so you can iterate on retrievers, prompts, and models with data.
