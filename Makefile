@@ -2,7 +2,6 @@ SHELL = /bin/bash
 
 env-setup-dev:
 	pixi install
-	pixi run pip install --upgrade -r requirements.txt
 
 .PHONY: pull-opik
 pull-opik:

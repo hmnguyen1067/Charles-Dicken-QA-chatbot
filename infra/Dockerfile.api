@@ -13,12 +13,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY requirements-api.txt ./
+COPY requirements.txt ./
 COPY pyproject.toml ./
 COPY src ./src
 
-RUN pip install -r requirements-api.txt && \
-    pip install fastapi "uvicorn[standard]" && \
+RUN pip install -r requirements.txt && \
     pip install .
 
 
