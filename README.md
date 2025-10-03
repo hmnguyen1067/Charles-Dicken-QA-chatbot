@@ -3,9 +3,22 @@
 [![Demo video](https://img.youtube.com/vi/5b3XEsJqm00/hqdefault.jpg)](https://www.youtube.com/embed/5b3XEsJqm00)
 
 ## Description
-This project is a Retrieval-Augmented Generation (RAG) chatbot focused on Charles Dickens’ works. It combines LlamaIndex Workflows for orchestration, a FastAPI backend, and a Streamlit frontend. Context and embeddings persist in Qdrant and Redis for fast, repeatable queries. Opik provides evaluation and monitoring so you can iterate on retrievers, prompts, and models with data.
+This repository provides a measured, end‑to‑end Retrieval-Augmented Generation (RAG) system dedicated to Charles Dickens' works, available publicly from Project Gutenberg. It retrieves from a curated corpus, cites sources for every answer, and includes evaluation and monitoring so you can iterate on retrievers, prompts, and models with data—while serving a reliable API and chat UI.
 
-Technologies: Python, LlamaIndex, Qdrant, Opik, FastAPI, Streamlit, Docker, OpenAI.
+- Builds a Dickens knowledge base with chunked texts and rich metadata.
+- Uses hybrid retrieval (embeddings + BM25) with reranking; selects the best retriever via evaluation.
+- Generates answers that cite the exact passages used; the UI surfaces sources and scores.
+- Persists embeddings and context in Qdrant and Redis; ships a warm-start snapshot for fast, repeatable startup.
+- Exposes a FastAPI backend and a Streamlit chat UI for quick interaction and demos.
+- Tracks retrieval and generation quality with Opik to compare approaches over time.
+- Ships a Docker Compose stack for one-command local deployment and reproducibility.
+
+What it answers well:
+- "Where does this quote appear, and in what context?"
+- "Compare Miss Havisham and Madame Defarge’s motivations."
+- "What themes of redemption show up in Great Expectations?"
+
+Technologies: Python, LlamaIndex Workflows, Qdrant, Redis, Opik, FastAPI, Streamlit, Docker, OpenAI.
 
 Project structure overview and key links:
 
@@ -57,7 +70,7 @@ Prerequisites:
 - Python 3.11+
 - Docker Desktop with Docker Compose
  - Make
- - Pixi (for environment management; used by some Makefile targets)
+ - Pixi (Optional for dev environment management)
 - An OpenAI API key in `.env` at the project root:
   ```
   OPENAI_API_KEY=your_api_key_here
@@ -70,16 +83,12 @@ cd Charles-Dicken-QA-chatbot
 ```
 
 ### Docker
-1) Start all services (Qdrant, Redis, Opik, FastAPI, Streamlit):
+Start all services (Qdrant, Redis, Opik, FastAPI, Streamlit):
 ```bash
 make docker-up
 # equivalent
 docker compose -f infra/docker-compose.yaml --profile opik --profile app up -d --build
 ```
-
-
-Notes:
-- See additional operational details in [docs/DOCKER.md](docs/DOCKER.md) and the UI guide in [docs/STREAMLIT_GUIDE.md](docs/STREAMLIT_GUIDE.md).
 
 ## Usage
 - API health: `curl http://localhost:8001/health`
@@ -131,14 +140,59 @@ Where things live:
 - Streamlit UI app: [src/chat/app.py](src/chat/app.py)
 - LlamaIndex Workflow and RAG logic: [src/charles_dicken_qa_chatbot/workflow.py](src/charles_dicken_qa_chatbot/workflow.py)
 - Docker + Compose: [infra/docker-compose.yaml](infra/docker-compose.yaml), [infra/Dockerfile.api](infra/Dockerfile.api), [infra/Dockerfile.streamlit](infra/Dockerfile.streamlit)
-- Additional guides: [docs/DOCKER.md](docs/DOCKER.md), [docs/STREAMLIT_GUIDE.md](docs/STREAMLIT_GUIDE.md)
+- Documentations: [docs/](docs/)
 
-Tips:
+Notes:
 - First-time setup is fastest with Docker Compose, which uploads the provided Qdrant snapshot before the API starts.
 - If you prefer to ingest documents yourself, see the notebook [notebooks/ingestion_no_workflow.ipynb](notebooks/ingestion_no_workflow.ipynb), the ingestion utilities in [src/charles_dicken_qa_chatbot/ingestion.py](src/charles_dicken_qa_chatbot/ingestion.py) and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 - There is also query rewriting with HyDE (Hypothetical Document Embeddings) in [notebooks/generation.ipynb](notebooks/generation.ipynb) but due to the overhead, it's not worth using it in workflow as seen in [src/charles_dicken_qa_chatbot/workflow.py](src/charles_dicken_qa_chatbot/workflow.py) line 364
 - If you want to install dev environment, install Pixi and checkout `make env-setup-dev`
+- See additional operational details in [docs/DOCKER.md](docs/DOCKER.md) and the UI guide in [docs/STREAMLIT_GUIDE.md](docs/STREAMLIT_GUIDE.md).
 
-## Rooms for improvement
-* [ ] Add Guardrails
-* [ ] Cloud deployment
+## Evaluation Criteria
+
+This section is for DataTalksClub's LLM Zoomcamp. Please refer to [ARCHITECTURE.md](docs/ARCHITECTURE.md) for further implementation explanations of the criteria below
+
+* Problem description
+    * 0 points: The problem is not described
+    * 1 point: The problem is described but briefly or unclearly
+    * [x] 2 points: The problem is well-described and it's clear what problem the project solves
+* Retrieval flow
+    * 0 points: No knowledge base or LLM is used
+    * 1 point: No knowledge base is used, and the LLM is queried directly
+    * [x] 2 points: Both a knowledge base and an LLM are used in the flow
+* Retrieval evaluation
+    * 0 points: No evaluation of retrieval is provided
+    * 1 point: Only one retrieval approach is evaluated
+    * [x] 2 points: Multiple retrieval approaches are evaluated, and the best one is used
+* LLM evaluation
+    * 0 points: No evaluation of final LLM output is provided
+    * 1 point: Only one approach (e.g., one prompt) is evaluated
+    * [x] 2 points: Multiple approaches are evaluated, and the best one is used
+* Interface
+   * 0 points: No way to interact with the application at all
+   * 1 point: Command line interface, a script, or a Jupyter notebook
+   * [x] 2 points: UI (e.g., Streamlit), web application (e.g., Django), or an API (e.g., built with FastAPI)
+* Ingestion pipeline
+   * 0 points: No ingestion
+   * 1 point: Semi-automated ingestion of the dataset into the knowledge base, e.g., with a Jupyter notebook
+   * [x] 2 points: Automated ingestion with a Python script or a special tool (e.g., Mage, dlt, Airflow, Prefect)
+* Monitoring
+   * 0 points: No monitoring
+   * [x] 1 point: User feedback is collected OR there's a monitoring dashboard `(Can be improved with collecting user feedback in Streamlit -> Opik)`
+   * 2 points: User feedback is collected and there's a dashboard with at least 5 charts
+* Containerization
+    * 0 points: No containerization
+    * 1 point: Dockerfile is provided for the main application OR there's a docker-compose for the dependencies only
+    * [x] 2 points: Everything is in docker-compose
+* Reproducibility
+    * 0 points: No instructions on how to run the code, the data is missing, or it's unclear how to access it
+    * 1 point: Some instructions are provided but are incomplete, OR instructions are clear and complete, the code works, but the data is missing
+    * [x] 2 points: Instructions are clear, the dataset is accessible, it's easy to run the code, and it works. The versions for all dependencies are specified.
+* Best practices
+    * [x] Hybrid search: combining both text and vector search (at least evaluating it) (1 point)
+    * [x] Document re-ranking (1 point)
+    * [ ] User query rewriting (1 point)`(I did include it in the notebook experiment but not in workflow)`
+* Bonus points (not covered in the course)
+    * [ ] Deployment to the cloud (2 points)
+    * [ ] Up to 3 extra bonus points if you want to award for something extra (write in feedback for what)

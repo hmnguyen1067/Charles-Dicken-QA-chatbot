@@ -71,7 +71,7 @@ The core RAG logic lives in `src/charles_dicken_qa_chatbot/workflow.py` as a Lla
 <p align="center"><em>Figure: Opik traces show step-level execution for each query.</em></p>
 
 - All workflow steps decorated with `@opik.track` for automatic tracing
-- Conversations tracked with thread_id for multi-turn monitoring (conversations)
+- Opik dashboard also includes cost tracking, making it easier to identify cost anomalies.
 
 Metric glossary (what each score means):
 - UsefulnessMetric: How helpful the answer is for the user’s task and question intent. Higher is better.
@@ -104,6 +104,8 @@ Note:
   <img src="../assets/opik-exp-metrics1.png" alt="Opik Feedback scores tab with detailed metrics per run" width="720" />
 </p>
 <p align="center"><em>Figure: Detailed feedback scores per run (usefulness, relevance, precision/recall, hallucination).</em></p>
+
+- Each user→assistant turn in Streamlit updates the current Opik trace with the `input` (question), `output` (answer), and a `thread_id` so multi‑turn sessions are grouped as one conversation.
 
 <p align="center">
   <img src="../assets/opik-convo.png" alt="Opik conversation logs showing messages streamed from the Streamlit UI" width="720" />
@@ -141,15 +143,3 @@ Interpretation and selection:
   - RedisIndexStore: Index metadata
   - RedisCache: Ingestion pipeline cache
   - Workflow context serialization (`ctx` key)
-
-## Services & Ports
-
-- Qdrant: 6333 (HTTP), 6334 (gRPC)
-- Redis: 6380 external (container 6379)
-- API (FastAPI): 8001
-- Streamlit: 8501
-- Opik: 5173 (web UI; API at /api)
-
-Compose profiles:
-- `opik`: Opik monitoring stack
-- `app`: Streamlit UI service
